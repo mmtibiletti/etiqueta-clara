@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "display": "trigo",
+      "keywords": ["wheat", "trigo", "blé", "farine de blé"]
+    },
+    {
+      "display": "cebada",
+      "keywords": ["barley", "cebada"]
+    },
+    {
+      "display": "centeno",
+      "keywords": ["rye", "centeno"]
+    },
+    {
+      "display": "espelta",
+      "keywords": ["spelt", "espelta"]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "rules": [
+    {
+      "display": "leche",
+      "keywords": ["milk", "leche", "lait"]
+    },
+    {
+      "display": "lactosa",
+      "keywords": ["lactose", "lactosa"]
+    },
+    {
+      "display": "suero de leche",
+      "keywords": ["whey", "suero"]
+    }
+  ]
+}

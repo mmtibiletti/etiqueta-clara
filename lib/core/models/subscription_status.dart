@@ -1,0 +1,4 @@
+enum SubscriptionStatus {
+  free,
+  premium,
+}
