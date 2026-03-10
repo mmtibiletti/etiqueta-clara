@@ -14,9 +14,12 @@ class OpenFoodFactsService {
         .get();
 
     if (manualDoc.exists) {
+      LogService.info("📦 Producto encontrado en base local");
       final data = manualDoc.data()!;
 
       final product = Product(
+        id: barcode,
+        barcode: barcode,
         name: data['name'],
         brand: data['brand'],
         ingredients: List<String>.from(data['ingredients']),
@@ -116,6 +119,8 @@ class OpenFoodFactsService {
       LogService.info("✅ Nombre: $name");
 
       return Product(
+        id: barcode,
+        barcode: barcode,
         name: name,
         brand: brand,
         imageUrl: imageUrl,

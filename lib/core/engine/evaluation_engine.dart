@@ -2,7 +2,11 @@ import '../models/product.dart';
 import '../models/user_profile.dart';
 import '../models/evaluation_result.dart';
 import '../models/ingredient_rule.dart';
+import '../config/risk_ingredients.dart';
 import '../services/log_service.dart';
+import '../services/ingredient_normalizer.dart';
+import '../services/ingredient_translator.dart';
+import '../services/ingredient_synonym_resolver.dart';
 import 'allergen_engine.dart';
 
 class EvaluationEngine {
@@ -24,7 +28,6 @@ class EvaluationEngine {
     Map<String, EvaluationDetail> results = {};
 
     if (profile.trackGluten) {
-
       results["gluten"] = _evaluateAllergen(
         product: product,
         rules: glutenRules,
@@ -35,7 +38,6 @@ class EvaluationEngine {
     }
 
     if (profile.trackLactose) {
-
       results["lactosa"] = _evaluateAllergen(
         product: product,
         rules: lactoseRules,
@@ -63,8 +65,11 @@ class EvaluationEngine {
     List<String> directMatches = [];
     List<String> traceMatches = [];
 
-    final ingredients =
-    product.ingredients.map((e) => e.toLowerCase()).toList();
+    final ingredients = IngredientSynonymResolver.resolveList(
+      IngredientTranslator.translateList(
+        IngredientNormalizer.normalizeList(product.ingredients),
+      ),
+    );
 
     if (product.ingredients.isNotEmpty) {
       confidence += 40;
@@ -93,6 +98,29 @@ class EvaluationEngine {
       }
     }
 
+    /// ⚠ INGREDIENTES DE RIESGO (ocultos)
+    for (var ingredient in ingredients) {
+      if (intoleranceName == "gluten") {
+        for (var risk in glutenRiskIngredients) {
+          if (ingredient.contains(risk)) {
+            score += 25;
+            traceMatches.add(
+              "Ingrediente de riesgo para gluten: $risk",
+            );
+          }
+        }
+      }
+      if (intoleranceName == "lactosa") {
+        for (var risk in lactoseRiskIngredients) {
+          if (ingredient.contains(risk)) {
+            score += 25;
+            traceMatches.add(
+              "Ingrediente de riesgo para lactosa: $risk",
+            );
+          }
+        }
+      }
+    }
     /// 🟢 INGREDIENTES NATURALMENTE SIN GLUTEN
     for (var ingredient in ingredients) {
       if (intoleranceName == "gluten") {

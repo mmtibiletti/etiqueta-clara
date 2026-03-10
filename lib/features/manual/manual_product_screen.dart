@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../core/models/product.dart';
 import '../../core/engine/evaluation_engine.dart';
@@ -87,16 +88,25 @@ class _ManualProductScreenState
         .map((e) => e.trim())
         .toList();
 
+    final uuid = const Uuid();
 
     final product = Product(
+      id: widget.barcode,
+      barcode: widget.barcode,
       name: name,
+      brand: _brandController.text.trim(),
       ingredients: ingredients,
+      source: "manual",
+      status: "pending",
+      createdByUid: user?.uid,
+      createdByNickname: profile.nickname,
     );
 
     await FirebaseFirestore.instance
         .collection('manual_products')
         .doc(widget.barcode)
         .set({
+      'barcode': widget.barcode,
       'name': name,
       'brand': _brandController.text.trim(),
       'ingredients': ingredients,

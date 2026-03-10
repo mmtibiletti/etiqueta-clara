@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/models/evaluation_result.dart';
 import '../../core/models/product.dart';
+import '../../core/models/product_report.dart';
+import '../../core/services/product_report_service.dart';
 import '../../core/config/intolerance_config.dart';
 
 import '../profile/public_profile_screen.dart';
@@ -212,6 +215,27 @@ class ResultScreen extends StatelessWidget {
               ),
             ),
 
+            const SizedBox(height: 20),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.flag),
+                  label: const Text("Reportar problema con este producto"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade400,
+                  ),
+                  onPressed: () {
+                    _showReportDialog(context);
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
             const SizedBox(height: 30),
 
             /// 🔍 BLOQUES DETALLE
@@ -288,47 +312,41 @@ class ResultScreen extends StatelessWidget {
                 child: Text("No se detectan ingredientes problemáticos."),
               ),
 
+            const SizedBox(height: 10),
+            _buildConfidenceBar(detail.confidence),
+
             /// 🔴 INGREDIENTES DIRECTOS
             if (detail.directMatches.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               const Text(
                 "Ingredientes detectados:",
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
               ...detail.directMatches.map(
-                    (i) => Padding(
+                    (r) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text(
-                    "• $i",
-                    style: const TextStyle(color: Colors.red),
-                  ),
+                  child: Text("• $r"),
                 ),
               ),
             ],
 
             /// 🟠 TRAZAS
             if (detail.traceMatches.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               const Text(
-                "Trazas detectadas:",
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+                "Posibles riesgos/trazas:",
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
               ...detail.traceMatches.map(
-                    (i) => Padding(
+                    (r) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text(
-                    "• $i",
-                    style: const TextStyle(color: Colors.orange),
-                  ),
+                  child: Text("• $r"),
                 ),
               ),
             ],
+
             if (detail.confidence < 60)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -343,6 +361,97 @@ class ResultScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildConfidenceBar(int confidence) {
+
+    Color color;
+
+    if (confidence >= 70) {
+      color = Colors.green;
+    } else if (confidence >= 40) {
+      color = Colors.orange;
+    } else {
+      color = Colors.red;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        Text(
+          "Nivel de confianza del análisis: $confidence%",
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: confidence / 100,
+            minHeight: 8,
+            backgroundColor: Colors.grey.shade300,
+            valueColor: AlwaysStoppedAnimation(color),
+          ),
+        ),
+
+      ],
+    );
+  }
+
+  void _showReportDialog(BuildContext context) {
+    String? selected;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Reportar problema"),
+          content: DropdownButtonFormField<String>(
+            hint: const Text("Selecciona intolerancia"),
+            items: intoleranceLabels.entries.map((entry) {
+              return DropdownMenuItem(
+                value: entry.key,
+                child: Text(entry.value),
+              );
+            }).toList(),
+            onChanged: (value) {
+              selected = value;
+            },
+          ),
+          actions: [
+            TextButton(
+              child: const Text("Cancelar"),
+              onPressed: () => Navigator.pop(context),
+            ),
+
+            ElevatedButton(
+              child: const Text("Enviar"),
+              onPressed: () async {
+                if (selected == null) return;
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null) return;
+                final report = ProductReport(
+                  uid: user.uid,
+                  intolerance: selected!,
+                  vote: "unsafe",
+                  timestamp: DateTime.now(),
+                );
+                await ProductReportService().reportProduct(
+                  productId: product.barcode ?? product.id,
+                  report: report,
+                );
+                Navigator.pop(context);
+              },
+            ),
+
+          ],
+        );
+      },
     );
   }
 }

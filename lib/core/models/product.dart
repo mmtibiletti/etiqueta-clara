@@ -1,4 +1,6 @@
 class Product {
+  final String id;
+  final String? barcode;
   final String name;
   final String? brand;
   final String? imageUrl;
@@ -14,6 +16,8 @@ class Product {
   final List<String>? labels;
 
   const Product({
+    required this.id,
+    this.barcode,
     required this.name,
     required this.ingredients,
     this.ingredientsAnalysisTags,
