@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../core/models/evaluation_result.dart';
 import '../../core/models/product.dart';
 import '../../core/models/product_report.dart';
@@ -8,7 +9,7 @@ import '../../core/config/intolerance_config.dart';
 
 import '../profile/public_profile_screen.dart';
 
-class ResultScreen extends StatelessWidget {
+class ResultScreen extends StatefulWidget {
   final EvaluationResult result;
   final Product product;
 
@@ -19,7 +20,24 @@ class ResultScreen extends StatelessWidget {
   });
 
   @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+
+  late EvaluationResult result;
+  bool communityOverride = false;
+
+  @override
+  void initState() {
+    super.initState();
+    result = widget.result;
+    _checkCommunityReports();
+  }
+
+  @override
   Widget build(BuildContext context) {
+
     final globalStatus = result.globalStatus;
 
     late Color mainColor;
@@ -39,7 +57,7 @@ class ResultScreen extends StatelessWidget {
         mainLabel = "NO RECOMENDADO";
         break;
     }
-    print("Producto creado por UID: ${product.createdByUid}");
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Resultado'),
@@ -87,11 +105,11 @@ class ResultScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             /// 📦 Imagen producto
-            if (product.imageUrl != null)
+            if (widget.product.imageUrl != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Image.network(
-                  product.imageUrl!,
+                  widget.product.imageUrl!,
                   height: 180,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
@@ -106,13 +124,14 @@ class ResultScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            /// 🏷 Nombre + marca + estado comunidad
+            /// 🏷 Nombre + marca
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
+
                   Text(
-                    product.name,
+                    widget.product.name,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 18,
@@ -120,29 +139,30 @@ class ResultScreen extends StatelessWidget {
                     ),
                   ),
 
-                  if (product.brand != null &&
-                      product.brand!.isNotEmpty)
+                  if (widget.product.brand != null &&
+                      widget.product.brand!.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        product.brand!,
+                        widget.product.brand!,
                         style: const TextStyle(
                           color: Colors.black54,
                         ),
                       ),
                     ),
 
-                  /// 🔥 INFO COMUNIDAD
-                  if (product.source == 'manual') ...[
+                  /// 🔥 INFO COMUNIDAD (solo productos manuales)
+                  if (widget.product.source == 'manual') ...[
                     const SizedBox(height: 12),
+
                     GestureDetector(
-                      onTap: product.createdByUid != null
+                      onTap: widget.product.createdByUid != null
                           ? () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => PublicProfileScreen(
-                              uid: product.createdByUid!,
+                              uid: widget.product.createdByUid!,
                             ),
                           ),
                         );
@@ -158,7 +178,7 @@ class ResultScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            "@${product.createdByNickname ?? 'usuario'}",
+                            "@${widget.product.createdByNickname ?? 'usuario'}",
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -168,48 +188,6 @@ class ResultScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-
-                    if (product.status == 'pending')
-                      Container(
-                        margin: const EdgeInsets.only(top: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          "⏳ Pendiente de Validación",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.orange,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-
-                    if (product.status == 'validated')
-                      Container(
-                        margin: const EdgeInsets.only(top: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          "✔ Producto Validado",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.green,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
                   ],
                 ],
               ),
@@ -217,6 +195,32 @@ class ResultScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+            /// ⚠ AVISO COMUNIDAD
+            if (communityOverride)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.people, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Este producto ha sido reportado como inseguro por la comunidad.",
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 20),
+
+            /// 🚩 BOTÓN REPORTAR
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: SizedBox(
@@ -233,8 +237,6 @@ class ResultScreen extends StatelessWidget {
                 ),
               ),
             ),
-
-            const SizedBox(height: 30),
 
             const SizedBox(height: 30),
 
@@ -258,7 +260,9 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
+  /// 🧠 DETALLE DE INTOLERANCIA
   Widget _buildDetailBlock(String title, EvaluationDetail detail) {
+
     late Color statusColor;
     late String statusLabel;
 
@@ -288,6 +292,7 @@ class ResultScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+
             Text(
               title,
               style: const TextStyle(
@@ -306,111 +311,39 @@ class ResultScreen extends StatelessWidget {
               ),
             ),
 
-            if (!detail.hasAlerts)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text("No se detectan ingredientes problemáticos."),
-              ),
-
             const SizedBox(height: 10),
-            _buildConfidenceBar(detail.confidence),
 
-            /// 🔴 INGREDIENTES DIRECTOS
-            if (detail.directMatches.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Text(
-                "Ingredientes detectados:",
-                style: TextStyle(fontWeight: FontWeight.w600),
+            ...detail.directMatches.map(
+                  (r) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text("• $r"),
               ),
-              const SizedBox(height: 6),
-              ...detail.directMatches.map(
-                    (r) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text("• $r"),
-                ),
-              ),
-            ],
+            ),
 
-            /// 🟠 TRAZAS
-            if (detail.traceMatches.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              const Text(
-                "Posibles riesgos/trazas:",
-                style: TextStyle(fontWeight: FontWeight.w600),
+            ...detail.traceMatches.map(
+                  (r) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text("• $r"),
               ),
-              const SizedBox(height: 6),
-              ...detail.traceMatches.map(
-                    (r) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text("• $r"),
-                ),
-              ),
-            ],
-
-            if (detail.confidence < 60)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  "Información limitada del producto",
-                  style: TextStyle(
-                    color: Colors.orange,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildConfidenceBar(int confidence) {
-
-    Color color;
-
-    if (confidence >= 70) {
-      color = Colors.green;
-    } else if (confidence >= 40) {
-      color = Colors.orange;
-    } else {
-      color = Colors.red;
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-
-        Text(
-          "Nivel de confianza del análisis: $confidence%",
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: 6),
-
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: confidence / 100,
-            minHeight: 8,
-            backgroundColor: Colors.grey.shade300,
-            valueColor: AlwaysStoppedAnimation(color),
-          ),
-        ),
-
-      ],
-    );
-  }
-
+  /// 🚩 DIALOGO REPORTAR
   void _showReportDialog(BuildContext context) {
+
     String? selected;
+
     showDialog(
       context: context,
       builder: (context) {
+
         return AlertDialog(
           title: const Text("Reportar problema"),
+
           content: DropdownButtonFormField<String>(
             hint: const Text("Selecciona intolerancia"),
             items: intoleranceLabels.entries.map((entry) {
@@ -423,7 +356,9 @@ class ResultScreen extends StatelessWidget {
               selected = value;
             },
           ),
+
           actions: [
+
             TextButton(
               child: const Text("Cancelar"),
               onPressed: () => Navigator.pop(context),
@@ -432,26 +367,66 @@ class ResultScreen extends StatelessWidget {
             ElevatedButton(
               child: const Text("Enviar"),
               onPressed: () async {
+
                 if (selected == null) return;
+
                 final user = FirebaseAuth.instance.currentUser;
                 if (user == null) return;
+
                 final report = ProductReport(
                   uid: user.uid,
                   intolerance: selected!,
                   vote: "unsafe",
                   timestamp: DateTime.now(),
                 );
+
                 await ProductReportService().reportProduct(
-                  productId: product.barcode ?? product.id,
+                  productId: widget.product.barcode ?? widget.product.id,
                   report: report,
                 );
+
                 Navigator.pop(context);
               },
             ),
-
           ],
         );
       },
     );
+  }
+
+  /// 🧠 REPUTACIÓN COMUNITARIA
+  Future<void> _checkCommunityReports() async {
+
+    final votes = await ProductReportService()
+        .getUnsafeVotes(widget.product.barcode ?? widget.product.id);
+
+    bool changed = false;
+
+    votes.forEach((intolerance, count) {
+
+      if (count >= 3 && result.results.containsKey(intolerance)) {
+
+        final detail = result.results[intolerance]!;
+
+        result.results[intolerance] = EvaluationDetail(
+          status: RiskStatus.red,
+          directMatches: [
+            ...detail.directMatches,
+            "⚠ Reportado como inseguro por la comunidad ($count votos)"
+          ],
+          traceMatches: detail.traceMatches,
+          confidence: detail.confidence,
+        );
+
+        changed = true;
+      }
+
+    });
+
+    if (changed) {
+      setState(() {
+        communityOverride = true;
+      });
+    }
   }
 }
