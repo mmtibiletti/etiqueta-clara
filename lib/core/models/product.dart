@@ -32,4 +32,40 @@ class Product {
     this.createdByNickname,
     this.createdByAvatar,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "barcode": barcode,
+      "name": name,
+      "brand": brand,
+      "imageUrl": imageUrl,
+      "ingredients": ingredients,
+      "allergens": allergens,
+      "traces": traces,
+      "labels": labels,
+      "source": source,
+    };
+  }
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json["id"],
+      barcode: json["barcode"],
+      name: json["name"],
+      brand: json["brand"],
+      imageUrl: json["imageUrl"],
+      ingredients: List<String>.from(json["ingredients"] ?? []),
+      allergens: json["allergens"] != null
+          ? List<String>.from(json["allergens"])
+          : null,
+      traces: json["traces"] != null
+          ? List<String>.from(json["traces"])
+          : null,
+      labels: json["labels"] != null
+          ? List<String>.from(json["labels"])
+          : null,
+      source: json["source"],
+    );
+  }
 }

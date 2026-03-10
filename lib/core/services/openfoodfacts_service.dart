@@ -2,11 +2,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/log_service.dart';
+import 'product_cache_service.dart';
 
 import '../models/product.dart';
 
 class OpenFoodFactsService {
   Future<Product?> fetchProduct(String barcode) async {
+    final cache = ProductCacheService();
+    final cached = await cache.getProduct(barcode);
+
     // 🔹 Primero buscamos en base propia
     final manualDoc = await FirebaseFirestore.instance
         .collection('manual_products')
@@ -34,6 +38,11 @@ class OpenFoodFactsService {
     }
     try {
       LogService.info("🔎 Consultando OpenFoodFacts V2 para: $barcode");
+
+      if (cached != null) {
+        LogService.info("⚡ Producto encontrado en CACHE");
+        return cached;
+      }
 
       final url = Uri.parse(
         'https://world.openfoodfacts.org/api/v2/product/$barcode',
@@ -118,7 +127,7 @@ class OpenFoodFactsService {
 
       LogService.info("✅ Nombre: $name");
 
-      return Product(
+      final product= Product(
         id: barcode,
         barcode: barcode,
         name: name,
@@ -134,6 +143,8 @@ class OpenFoodFactsService {
             ? List<String>.from(labels)
             : null,
       );
+      await cache.saveProduct(product);
+      return product;
     } catch (e) {
       LogService.error("❌ Error OpenFoodFacts V2: $e");
       return null;
