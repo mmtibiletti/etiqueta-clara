@@ -4,109 +4,120 @@ import '../models/evaluation_result.dart';
 import '../models/ingredient_rule.dart';
 
 class EvaluationEngine {
-
-  final Map<String, List<IngredientRule>> intoleranceRules;
+  final Map<String, List<IngredientRule>> rules;
   final List<String> safeGlutenIngredients;
 
   EvaluationEngine({
-    required this.intoleranceRules,
+    required this.rules,
     required this.safeGlutenIngredients,
   });
 
   EvaluationResult evaluate(Product product, UserProfile profile) {
-
     Map<String, EvaluationDetail> results = {};
+    if (profile.trackGluten && rules.containsKey("gluten")) {
+      results["gluten"] = _evaluate(product, rules["gluten"]!, "gluten");
+    }
 
-    intoleranceRules.forEach((intolerance, rules) {
-
-      final detail = _evaluateAllergen(
-        product: product,
-        rules: rules,
-        intoleranceName: intolerance,
-      );
-
-      results[intolerance] = detail;
-    });
+    if (profile.trackLactose && rules.containsKey("lactose")) {
+      results["lactose"] = _evaluate(product, rules["lactose"]!, "lactose");
+    }
 
     return EvaluationResult(results: results);
   }
+}
 
-  EvaluationDetail _evaluateAllergen({
-    required Product product,
-    required List<IngredientRule> rules,
-    required String intoleranceName,
-  }) {
+EvaluationDetail _evaluate(
+    Product product,
+    List<IngredientRule> rules,
+    String intolerance,
+    ) {
+  int score = 0;
+  int confidence = 0;
+  List<String> directMatches = [];
+  List<String> traceMatches = [];
+  final ingredients = product.ingredients.map((e) => e.toLowerCase()).toList();
 
-    int score = 0;
-    int confidence = 0;
+  if (product.ingredients.isNotEmpty)
+    confidence += 40;
 
-    List<String> directMatches = [];
-    List<String> traceMatches = [];
+  if (product.ingredientsAnalysisTags != null)
+    confidence += 30;
 
-    final ingredients =
-    product.ingredients.map((e) => e.toLowerCase()).toList();
+  if (product.allergens != null)
+    confidence += 20;
 
-    if (product.ingredients.isNotEmpty) confidence += 40;
-    if (product.ingredientsAnalysisTags != null) confidence += 30;
-    if (product.allergens != null) confidence += 20;
-    if (product.traces != null) confidence += 10;
+  if (product.traces != null)
+    confidence += 10;
 
-    /// INGREDIENTES
-    for (var ingredient in ingredients) {
-      for (var rule in rules) {
-        for (var keyword in rule.keywords) {
-          if (ingredient.contains(keyword)) {
-            score += 100;
-            directMatches.add("Contiene ${rule.display}");
-          }
+  /// Ingredientes directos
+  for (var ingredient in ingredients) {
+    for (var rule in rules) {
+      for (var keyword in rule.keywords) {
+        if (ingredient.contains(keyword)) {
+          score += 100;
+          directMatches.add( "Contiene ${rule.display}");
         }
       }
     }
+  }
 
-    /// CERTIFICACIÓN SIN GLUTEN
-    if (intoleranceName == "gluten" &&
-        _isCertifiedGlutenFree(product)) {
-      score -= 80;
-      directMatches.add(
-        "Producto certificado sin gluten",
-      );
+  /// Ingredientes naturalmente sin gluten
+  if (intolerance == "gluten") {
+    for (var ingredient in ingredients) {
+      for (var safe in safeGlutenIngredients) {
+        if (ingredient.contains(safe)) {
+          score -= 30;
+          directMatches.add( "Ingrediente naturalmente sin gluten: $safe");
+        }
+      }
     }
+  }
 
-    /// TRAZAS
-    if (product.traces != null &&
-        product.traces!.contains("en:$intoleranceName")) {
+  /// Alergenos declarados
+  if (product.allergens != null) {
+    if (product.allergens!.contains("en:$intolerance")) {
+      score += 90;
+      directMatches.add( "El fabricante declara presencia de $intolerance");
+    }
+  }
+
+  /// Trazas
+  if (product.traces != null) {
+    if (product.traces!.contains("en:$intolerance")) {
       score += 40;
-      traceMatches.add("Puede contener trazas de $intoleranceName");
+      traceMatches.add( "Puede contener trazas de $intolerance");
     }
-
-    RiskStatus status;
-
-    if (score >= 80) {
-      status = RiskStatus.red;
-    } else if (score >= 30) {
-      status = RiskStatus.yellow;
-    } else {
-      status = RiskStatus.green;
-    }
-
-    return EvaluationDetail(
-      status: status,
-      directMatches: directMatches,
-      traceMatches: traceMatches,
-      confidence: confidence,
-    );
   }
 
-  bool _isCertifiedGlutenFree(Product product) {
-    if (product.labels == null) return false;
-    final labels = product.labels?.join(" ").toLowerCase() ?? "";
+  /// Certificación sin gluten
+  if (intolerance == "gluten" && _isCertifiedGlutenFree(product)) {
+    score -= 80;
+    directMatches.add("Producto certificado sin gluten");
+  }
 
-    if (labels.contains("gluten-free") ||
-        labels.contains("sin gluten") ||
-        labels.contains("no-gluten")) {
-      return true;
-    }
+  RiskStatus status;
+  if (score >= 80) {
+    status = RiskStatus.red;
+  }
+  else if (score >= 30) {
+    status = RiskStatus.yellow;
+  }
+  else {
+    status = RiskStatus.green;
+  }
 
+  return EvaluationDetail(
+    status: status,
+    directMatches: directMatches,
+    traceMatches: traceMatches,
+    confidence: confidence,
+  );
+}
+
+bool _isCertifiedGlutenFree(Product product) {
+  if (product.labels == null)
     return false;
-  }
+
+  final labels = product.labels!.join(" ").toLowerCase();
+  return labels.contains("gluten-free") || labels.contains("no-gluten");
 }

@@ -3,34 +3,34 @@ class Product {
   final String? barcode;
   final String name;
   final String? brand;
-  final String? imageUrl;
   final List<String> ingredients;
-  final List<String>? ingredientsAnalysisTags;
+  final String? imageUrl;
+  final String source;
+  final String? status;
+  final String? createdByUid;
+  final String? createdByNickname;
   final List<String>? allergens;
   final List<String>? traces;
-  final String? source;
-  final String? status;
-  final String? createdByNickname;
-  final String? createdByUid;
-  final String? createdByAvatar;
   final List<String>? labels;
+  final List<String>? labelsTags;
+  final List<String>? ingredientsAnalysisTags;
 
   const Product({
     required this.id,
     this.barcode,
     required this.name,
-    required this.ingredients,
-    this.ingredientsAnalysisTags,
     this.brand,
+    required this.ingredients,
     this.imageUrl,
-    this.allergens,
-    this.traces,
-    this.labels,
-    this.source,
+    required this.source,
     this.status,
     this.createdByUid,
     this.createdByNickname,
-    this.createdByAvatar,
+    this.allergens,
+    this.traces,
+    this.labels,
+    this.labelsTags,
+    this.ingredientsAnalysisTags,
   });
 
   Map<String, dynamic> toJson() {
@@ -39,12 +39,17 @@ class Product {
       "barcode": barcode,
       "name": name,
       "brand": brand,
-      "imageUrl": imageUrl,
       "ingredients": ingredients,
+      "imageUrl": imageUrl,
+      "source": source,
+      "status": status,
+      "createdByUid": createdByUid,
+      "createdByNickname": createdByNickname,
       "allergens": allergens,
       "traces": traces,
       "labels": labels,
-      "source": source,
+      "labelsTags": labelsTags,
+      "ingredientsAnalysisTags": ingredientsAnalysisTags,
     };
   }
 
@@ -54,8 +59,12 @@ class Product {
       barcode: json["barcode"],
       name: json["name"],
       brand: json["brand"],
-      imageUrl: json["imageUrl"],
       ingredients: List<String>.from(json["ingredients"] ?? []),
+      imageUrl: json["imageUrl"],
+      source: json["source"],
+      status: json["status"],
+      createdByUid: json["createdByUid"],
+      createdByNickname: json["createdByNickname"],
       allergens: json["allergens"] != null
           ? List<String>.from(json["allergens"])
           : null,
@@ -65,7 +74,12 @@ class Product {
       labels: json["labels"] != null
           ? List<String>.from(json["labels"])
           : null,
-      source: json["source"],
+      labelsTags: json["labelsTags"] != null
+          ? List<String>.from(json["labelsTags"])
+          : null,
+      ingredientsAnalysisTags: json["ingredientsAnalysisTags"] != null
+          ? List<String>.from(json["ingredientsAnalysisTags"])
+          : null,
     );
   }
 }
