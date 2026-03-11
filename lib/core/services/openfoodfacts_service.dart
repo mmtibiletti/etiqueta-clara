@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/log_service.dart';
 import 'product_cache_service.dart';
-
 import '../models/product.dart';
 
 class OpenFoodFactsService {
@@ -27,11 +26,10 @@ class OpenFoodFactsService {
         name: data['name'],
         brand: data['brand'],
         ingredients: List<String>.from(data['ingredients']),
-        source: 'manual',
+        source: "Manual",
         status: data['status'],
         createdByUid: data['createdBy'],
         createdByNickname: data['createdByNickname'],
-        createdByAvatar: data['createdByAvatar'],
       );
 
       return product;
@@ -132,15 +130,16 @@ class OpenFoodFactsService {
         barcode: barcode,
         name: name,
         brand: brand,
-        imageUrl: imageUrl,
         ingredients: ingredientsList,
-        ingredientsAnalysisTags: ingredientsAnalysisTags != null
-            ? List<String>.from(ingredientsAnalysisTags)
-            : null,
+        source: "openFoodFacts",
+        imageUrl: imageUrl,
         allergens: allergens,
         traces: traces,
         labels: labels != null
             ? List<String>.from(labels)
+            : null,
+        ingredientsAnalysisTags: ingredientsAnalysisTags != null
+            ? List<String>.from(ingredientsAnalysisTags)
             : null,
       );
       await cache.saveProduct(product);

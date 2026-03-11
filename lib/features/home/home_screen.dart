@@ -371,7 +371,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final safeGlutenIngredients =
       await ruleLoader.loadSafeGlutenIngredients();
       final engine = EvaluationEngine(
-        intoleranceRules: allRules,
+        rules: allRules,
         safeGlutenIngredients: safeGlutenIngredients,
       );
 

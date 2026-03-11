@@ -159,11 +159,11 @@ class _ManualProductScreenState
       name: name,
       brand: _brandController.text.trim(),
       ingredients: ingredients,
-      imageUrl: imageUrl,
       source: "manual",
       status: "pending",
       createdByUid: user?.uid,
       createdByNickname: profile.nickname,
+      imageUrl: imageUrl,
     );
 
     await FirebaseFirestore.instance
@@ -185,14 +185,19 @@ class _ManualProductScreenState
     /// 🧠 MOTOR DE EVALUACIÓN
     final ruleLoader = RuleLoaderService();
 
-    final glutenRules = await ruleLoader.loadGlutenRules();
-    final lactoseRules = await ruleLoader.loadLactoseRules();
+    final glutenRules = await ruleLoader.loadRules("gluten");
+    final lactoseRules = await ruleLoader.loadRules("lactose");
+
+    final rules = {
+      "gluten": glutenRules,
+      "lactose": lactoseRules,
+    };
+
     final safeGlutenIngredients =
     await ruleLoader.loadSafeGlutenIngredients();
 
     final engine = EvaluationEngine(
-      glutenRules: glutenRules,
-      lactoseRules: lactoseRules,
+      rules: rules,
       safeGlutenIngredients: safeGlutenIngredients,
     );
 
