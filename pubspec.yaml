@@ -71,6 +71,9 @@ flutter:
   assets:
     - assets/rules/gluten_rules.json
     - assets/rules/lactose_rules.json
+    - assets/rules/egg_rules.json
+    - assets/rules/nuts_rules.json
+    - assets/rules/soy_rules.json
     - assets/avatars/
     - assets/rules/
 

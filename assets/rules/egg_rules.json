@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "display": "huevo",
+      "keywords": [
+        "huevo",
+        "egg",
+        "œuf",
+        "clara de huevo",
+        "yema de huevo",
+        "proteína de huevo",
+        "huevo en polvo"
+      ]
+    },
+    {
+      "display": "ovoalbumina",
+      "keywords": ["ovoalbumina", "ovoalbúmina","albumin"]
+    }
+  ]
+}

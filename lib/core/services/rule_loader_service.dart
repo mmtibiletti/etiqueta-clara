@@ -14,9 +14,10 @@ class RuleLoaderService {
     return List<String>.from(data['safe']);
   }
 
-  Future<List<IngredientRule>> loadGlutenRules() async {
+  Future<List<IngredientRule>> loadRules(String filename) async {
+
     final jsonString =
-    await rootBundle.loadString('assets/rules/gluten_rules.json');
+    await rootBundle.loadString('assets/rules/$filename');
 
     final data = jsonDecode(jsonString);
 
@@ -25,14 +26,23 @@ class RuleLoaderService {
         .toList();
   }
 
-  Future<List<IngredientRule>> loadLactoseRules() async {
-    final jsonString =
-    await rootBundle.loadString('assets/rules/lactose_rules.json');
+  /// 🔥 Carga todas las intolerancias
+  Future<Map<String, List<IngredientRule>>> loadAllRules() async {
 
-    final data = jsonDecode(jsonString);
+    final intolerances = {
+      "gluten": "gluten_rules.json",
+      "lactose": "lactose_rules.json",
+      "egg": "egg_rules.json",
+      "nuts": "nuts_rules.json",
+      "soy": "soy_rules.json",
+    };
 
-    return (data['rules'] as List)
-        .map((e) => IngredientRule.fromJson(e))
-        .toList();
+    Map<String, List<IngredientRule>> result = {};
+
+    for (final entry in intolerances.entries) {
+      result[entry.key] = await loadRules(entry.value);
+    }
+
+    return result;
   }
 }

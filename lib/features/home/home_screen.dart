@@ -367,20 +367,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
 
       final ruleLoader = RuleLoaderService();
-
-      final glutenRules = await ruleLoader.loadGlutenRules();
-      final lactoseRules = await ruleLoader.loadLactoseRules();
+      final allRules = await ruleLoader.loadAllRules();
       final safeGlutenIngredients =
-        await ruleLoader.loadSafeGlutenIngredients();
-
+      await ruleLoader.loadSafeGlutenIngredients();
       final engine = EvaluationEngine(
-        glutenRules: glutenRules,
-        lactoseRules: lactoseRules,
+        intoleranceRules: allRules,
         safeGlutenIngredients: safeGlutenIngredients,
       );
 
       final result = engine.evaluate(product, profile);
-
       final historyService = HistoryService();
       await historyService.saveScan(
         barcode: barcode,

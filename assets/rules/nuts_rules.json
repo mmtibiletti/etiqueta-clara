@@ -1,0 +1,23 @@
+{
+  "rules": [
+    {
+      "display": "frutos secos",
+      "keywords": [
+        "almendra",
+        "avellana",
+        "nuez",
+        "anacardo",
+        "pistacho",
+        "macadamia",
+        "pecana",
+        "nuez de brasil",
+        "almond",
+        "hazelnut",
+        "cashew",
+        "pistachio",
+        "pecan",
+        "macadamia"
+      ]
+    }
+  ]
+}
